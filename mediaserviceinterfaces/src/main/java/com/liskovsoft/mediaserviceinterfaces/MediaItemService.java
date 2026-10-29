@@ -31,6 +31,11 @@ public interface MediaItemService {
     MediaItemMetadata getMetadata(MediaItem item);
     MediaItemMetadata getMetadata(String videoId);
     MediaItemMetadata getMetadata(String videoId, String playlistId, int playlistIndex, String playlistParams);
+    /**
+     * Whether the video is labeled by YouTube as AI-generated (altered or synthetic content)
+     * @return null if the check failed
+     */
+    Boolean isAiLabeled(String videoId);
     //MediaGroup continueGroup(MediaGroup mediaGroup);
     void updateHistoryPosition(MediaItem item, float positionSec);
     void updateHistoryPosition(String videoId, float positionSec);
@@ -62,6 +67,10 @@ public interface MediaItemService {
     Observable<MediaItemMetadata> getMetadataObserve(MediaItem item);
     Observable<MediaItemMetadata> getMetadataObserve(String videoId);
     Observable<MediaItemMetadata> getMetadataObserve(String videoId, String playlistId, int playlistIndex, String playlistParams);
+    /**
+     * Emits ids of the videos that are labeled by YouTube as AI-generated
+     */
+    Observable<String> getAiLabeledObserve(List<String> videoIds);
     //Observable<MediaGroup> continueGroupObserve(MediaGroup mediaGroup);
     Observable<Void> updateHistoryPositionObserve(MediaItem item, float positionSec);
     Observable<Void> updateHistoryPositionObserve(String videoId, float positionSec);

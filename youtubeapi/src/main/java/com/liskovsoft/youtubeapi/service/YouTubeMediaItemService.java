@@ -151,6 +151,28 @@ public class YouTubeMediaItemService implements MediaItemService {
     }
 
     @Override
+    public Boolean isAiLabeled(String videoId) {
+        return getWatchNextService().isAiLabeled(videoId);
+    }
+
+    @Override
+    public Observable<String> getAiLabeledObserve(List<String> videoIds) {
+        return RxHelper.create(emitter -> {
+            for (String videoId : videoIds) {
+                if (emitter.isDisposed()) {
+                    return;
+                }
+
+                if (Boolean.TRUE.equals(isAiLabeled(videoId))) {
+                    emitter.onNext(videoId);
+                }
+            }
+
+            emitter.onComplete();
+        });
+    }
+
+    @Override
     public void updateHistoryPosition(MediaItem item, float positionSec) {
         checkSigned();
 

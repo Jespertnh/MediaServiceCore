@@ -16,15 +16,21 @@ import com.liskovsoft.youtubeapi.next.v2.gen.DislikesResult
 import com.liskovsoft.youtubeapi.next.v2.gen.UnlocalizedTitleResult
 import com.liskovsoft.youtubeapi.next.v2.gen.WatchNextResult
 import com.liskovsoft.youtubeapi.next.v2.gen.WatchNextResultContinuation
+import com.liskovsoft.youtubeapi.next.v2.gen.getDescriptionPanel
 import com.liskovsoft.youtubeapi.next.v2.gen.getDislikeCount
 import com.liskovsoft.youtubeapi.next.v2.gen.getLikeCount
+import com.liskovsoft.youtubeapi.next.v2.gen.isAiLabeled
 import com.liskovsoft.youtubeapi.next.v2.gen.isEmpty
 import com.liskovsoft.youtubeapi.next.v2.impl.MediaItemMetadataImpl
 import com.liskovsoft.youtubeapi.service.YouTubeSignInService
+import com.liskovsoft.youtubeapi.service.internal.AiLabelCache
+import java.util.concurrent.Semaphore
 
 internal open class WatchNextService {
     private var mWatchNextApi = RetrofitHelper.create(WatchNextApi::class.java)
     private val mAppService = AppService.instance()
+    // Limit background AI label checks to not flood the network
+    private val mAiLabelPermits = Semaphore(3)
 
     fun getMetadata(videoId: String): MediaItemMetadata? {
         return getMetadata(videoId, null, 0)
@@ -45,6 +51,9 @@ internal open class WatchNextService {
             return null
         }
 
+        // Description is missing on some pages (e.g. mixes). Don't treat it as "not labeled".
+        watchNext.getDescriptionPanel()?.let { AiLabelCache.put(videoId, watchNext.isAiLabeled()) }
+
         return MediaItemMetadataImpl(watchNext).apply {
             channelId?.let {
                 ChannelGroupServiceImpl.cachedChannel = ItemImpl(it, author, authorImageUrl)
@@ -54,6 +63,37 @@ internal open class WatchNextService {
                     ChannelGroupServiceImpl.subscribe(isSubscribed, it, author, authorImageUrl)
                 }
             }
+        }
+    }
+
+    /**
+     * Whether the video is labeled by YouTube as AI-generated (altered or synthetic content).<br/>
+     * The label is only available on the watch page, so the result is cached.
+     * @return null if the check failed
+     */
+    fun isAiLabeled(videoId: String?): Boolean? {
+        if (videoId == null) {
+            return null
+        }
+
+        AiLabelCache.get(videoId)?.let { return it }
+
+        mAiLabelPermits.acquire()
+
+        try {
+            // The same video could be checked by another row in the meantime
+            AiLabelCache.get(videoId)?.let { return it }
+
+            // The label is public. Don't use the account to not affect recommendations.
+            val watchNext = getWatchNext(WatchNextApiHelper.getWatchNextQuery(
+                MediaGroupOptions.create(MediaGroup.TYPE_SUGGESTIONS).clientTV, videoId, null, 0, null), false) ?: return null
+            val isLabeled = watchNext.getDescriptionPanel()?.let { watchNext.isAiLabeled() } ?: return null
+
+            AiLabelCache.put(videoId, isLabeled)
+
+            return isLabeled
+        } finally {
+            mAiLabelPermits.release()
         }
     }
 
@@ -100,10 +140,10 @@ internal open class WatchNextService {
             MediaGroupOptions.create(MediaGroup.TYPE_SUGGESTIONS).clientTV, videoId, playlistId, playlistIndex, playlistParams))
     }
 
-    private fun getWatchNext(query: String): WatchNextResult? {
+    private fun getWatchNext(query: String, auth: Boolean = true): WatchNextResult? {
         val wrapper = mWatchNextApi.getWatchNextResult(query, mAppService.visitorData)
 
-        return RetrofitHelper.get(wrapper)
+        return RetrofitHelper.get(wrapper, auth)
     }
 
     private fun continueWatchNext(query: String, auth: Boolean = true): WatchNextResultContinuation? {

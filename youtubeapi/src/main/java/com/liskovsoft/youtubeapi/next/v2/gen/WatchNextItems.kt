@@ -238,7 +238,8 @@ internal data class EngagementPanel(
             ) {
                 data class Item(
                     val videoDescriptionHeaderRenderer: VideoDescriptionHeaderRenderer?,
-                    val expandableVideoDescriptionBodyRenderer: ExpandableVideoDescriptionBodyRenderer?
+                    val expandableVideoDescriptionBodyRenderer: ExpandableVideoDescriptionBodyRenderer?,
+                    val howThisWasMadeSectionViewModel: HowThisWasMadeSectionViewModel?
                 )
             }
             data class MacroMarkersListRenderer(
@@ -266,6 +267,13 @@ internal data class VideoDescriptionHeaderRenderer(
 internal data class ExpandableVideoDescriptionBodyRenderer(
     val descriptionBodyText: TextItem?,
     val label: TextItem?
+)
+
+// "How this was made" section of the description. E.g. header "Made with AI" (altered or synthetic content)
+internal data class HowThisWasMadeSectionViewModel(
+    val sectionTitle: TextItem?,
+    val bodyHeader: TextItem?,
+    val bodyText: TextItem?
 )
 
 internal data class Factoid(

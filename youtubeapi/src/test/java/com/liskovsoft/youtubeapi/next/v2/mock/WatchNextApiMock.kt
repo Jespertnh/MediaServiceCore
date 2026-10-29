@@ -51,3 +51,31 @@ internal interface WatchNextApiMock3: WatchNextApi {
     @POST("https://www.youtube.com/youtubei/v1/next")
     override fun getWatchNextResult(@Body watchNextQuery: String, @Header("X-Goog-Visitor-Id") visitorId: String): Call<WatchNextResult?>
 }
+
+internal interface WatchNextApiMockAiLabeled: WatchNextApi {
+    @Mock
+    @MockResponse(body = "next/v2/next_ai_labeled_2026.10.29.json")
+    @Headers("Content-Type: application/json")
+    @POST("https://www.youtube.com/youtubei/v1/next")
+    override fun getWatchNextResult(@Body watchNextQuery: String): Call<WatchNextResult?>
+
+    @Mock
+    @MockResponse(body = "next/v2/next_ai_labeled_2026.10.29.json")
+    @Headers("Content-Type: application/json")
+    @POST("https://www.youtube.com/youtubei/v1/next")
+    override fun getWatchNextResult(@Body watchNextQuery: String, @Header("X-Goog-Visitor-Id") visitorId: String): Call<WatchNextResult?>
+}
+
+internal interface WatchNextApiMockNotAiLabeled: WatchNextApi {
+    @Mock
+    @MockResponse(body = "next/v2/next_2024.02.08.json")
+    @Headers("Content-Type: application/json")
+    @POST("https://www.youtube.com/youtubei/v1/next")
+    override fun getWatchNextResult(@Body watchNextQuery: String): Call<WatchNextResult?>
+
+    @Mock
+    @MockResponse(body = "next/v2/next_2024.02.08.json")
+    @Headers("Content-Type: application/json")
+    @POST("https://www.youtube.com/youtubei/v1/next")
+    override fun getWatchNextResult(@Body watchNextQuery: String, @Header("X-Goog-Visitor-Id") visitorId: String): Call<WatchNextResult?>
+}

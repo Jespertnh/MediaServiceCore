@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.sharedutils.helpers.AppInfoHelpers;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
@@ -47,6 +48,16 @@ public class MediaServiceData {
     public static final int CONTENT_SHORTS_ALL = CONTENT_SHORTS_HOME | CONTENT_SHORTS_SEARCH
             | CONTENT_SHORTS_SUBSCRIPTIONS | CONTENT_SHORTS_HISTORY | CONTENT_SHORTS_TRENDING
             | CONTENT_SHORTS_CHANNEL | CONTENT_SHORTS_NEWS;
+    // Videos labeled by YouTube as "Made with AI" (altered or synthetic content)
+    public static final int CONTENT_AI_HOME = 1 << 15;
+    public static final int CONTENT_AI_SUBSCRIPTIONS = 1 << 16;
+    public static final int CONTENT_AI_SEARCH = 1 << 17;
+    public static final int CONTENT_AI_TRENDING = 1 << 18;
+    public static final int CONTENT_AI_CHANNEL = 1 << 19;
+    public static final int CONTENT_AI_SUGGESTIONS = 1 << 20;
+    public static final int CONTENT_AI_SHORTS = 1 << 21;
+    public static final int CONTENT_AI_ALL = CONTENT_AI_HOME | CONTENT_AI_SUBSCRIPTIONS | CONTENT_AI_SEARCH
+            | CONTENT_AI_TRENDING | CONTENT_AI_CHANNEL | CONTENT_AI_SUGGESTIONS | CONTENT_AI_SHORTS;
     private static MediaServiceData sInstance;
     private String mScreenId;
     private String mDeviceId;
@@ -197,6 +208,56 @@ public class MediaServiceData {
 
     public boolean isContentHidden(int content) {
         return (mHiddenContent & content) == content;
+    }
+
+    /**
+     * Whether videos labeled by YouTube as AI-generated should be removed from the group of the given type.<br/>
+     * NOTE: user's own lists (history, playlists, queue etc) are never filtered.
+     */
+    public boolean isAiLabeledHidden(int groupType) {
+        int content;
+
+        switch (groupType) {
+            case MediaGroup.TYPE_HOME:
+            case MediaGroup.TYPE_RECOMMENDED:
+            case MediaGroup.TYPE_MUSIC:
+            case MediaGroup.TYPE_NEWS:
+            case MediaGroup.TYPE_GAMING:
+            case MediaGroup.TYPE_KIDS_HOME:
+            case MediaGroup.TYPE_SPORTS:
+            case MediaGroup.TYPE_MOVIES:
+            case MediaGroup.TYPE_LIVE:
+                content = CONTENT_AI_HOME;
+                break;
+            case MediaGroup.TYPE_SUBSCRIPTIONS:
+            case MediaGroup.TYPE_NOTIFICATIONS:
+                content = CONTENT_AI_SUBSCRIPTIONS;
+                break;
+            case MediaGroup.TYPE_SEARCH:
+                content = CONTENT_AI_SEARCH;
+                break;
+            case MediaGroup.TYPE_TRENDING:
+                content = CONTENT_AI_TRENDING;
+                break;
+            case MediaGroup.TYPE_CHANNEL:
+            case MediaGroup.TYPE_CHANNEL_UPLOADS:
+                content = CONTENT_AI_CHANNEL;
+                break;
+            case MediaGroup.TYPE_SUGGESTIONS:
+                content = CONTENT_AI_SUGGESTIONS;
+                break;
+            case MediaGroup.TYPE_SHORTS:
+                content = CONTENT_AI_SHORTS;
+                break;
+            default:
+                return false;
+        }
+
+        return isContentHidden(content);
+    }
+
+    public boolean isAiLabeledHiddenAnywhere() {
+        return (mHiddenContent & CONTENT_AI_ALL) != 0;
     }
 
     public void setContentHidden(int content, boolean hide) {

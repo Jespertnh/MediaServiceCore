@@ -6,6 +6,7 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaItem
 import com.liskovsoft.youtubeapi.browse.v2.BrowseApiHelper
 import com.liskovsoft.youtubeapi.common.models.gen.*
 import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.WrapperMediaItem
+import com.liskovsoft.youtubeapi.service.internal.AiLabelCache
 
 internal abstract class BaseMediaGroup(private val options: MediaGroupOptions): MediaGroup {
     private val filter: ((ItemWrapper) -> Boolean) = {
@@ -13,7 +14,8 @@ internal abstract class BaseMediaGroup(private val options: MediaGroupOptions): 
         (options.removeShorts && it.isShorts()) ||
         (options.removeLive && it.isLive()) ||
         (options.removeUpcoming && it.isUpcoming()) ||
-        (options.removeWatched && (it.getPercentWatched() ?: 0) > 80 && !it.isLive())
+        (options.removeWatched && (it.getPercentWatched() ?: 0) > 80 && !it.isLive()) ||
+        (options.removeAiLabeled && AiLabelCache.isLabeled(it.getVideoId()))
     }
     // TODO: remove the filter when yt will able to mark shorts longer than one minute
     private val legacyFilter: ((WrapperMediaItem) -> Boolean) = {

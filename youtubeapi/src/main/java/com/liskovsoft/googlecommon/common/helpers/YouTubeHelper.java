@@ -14,6 +14,7 @@ import com.liskovsoft.googlecommon.common.models.items.Thumbnail;
 import com.liskovsoft.youtubeapi.common.models.gen.ThumbnailItem;
 import com.liskovsoft.youtubeapi.common.models.impl.mediagroup.SuggestionsGroup;
 import com.liskovsoft.youtubeapi.service.data.YouTubeMediaGroup;
+import com.liskovsoft.youtubeapi.service.internal.AiLabelCache;
 import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
 
 import java.util.Collections;
@@ -112,8 +113,9 @@ public final class YouTubeHelper {
                     (data.isContentHidden(MediaServiceData.CONTENT_UPCOMING_CHANNEL) && mediaGroup.getType() == MediaGroup.TYPE_CHANNEL_UPLOADS);
             boolean isHideStreamsEnabled = (data.isContentHidden(MediaServiceData.CONTENT_STREAMS_SUBSCRIPTIONS) && mediaGroup.getType() == MediaGroup.TYPE_SUBSCRIPTIONS);
             boolean isHideMixesEnabled = data.isContentHidden(MediaServiceData.CONTENT_MIXES);
+            boolean isHideAiLabeledEnabled = data.isAiLabeledHidden(mediaGroup.getType());
 
-            if (isHideShortsEnabled || isHideUpcomingEnabled || isHideStreamsEnabled || isHideMixesEnabled) {
+            if (isHideShortsEnabled || isHideUpcomingEnabled || isHideStreamsEnabled || isHideMixesEnabled || isHideAiLabeledEnabled) {
                 // NOTE: The group could be empty after filtering! Fix for that.
 
                 // Remove Shorts and/or Upcoming
@@ -124,7 +126,8 @@ public final class YouTubeHelper {
                     }
 
                     return (isHideShortsEnabled && isShorts(mediaItem)) || (isHideUpcomingEnabled && mediaItem.isUpcoming()) ||
-                            (isHideStreamsEnabled && mediaItem.isLive()) || (isHideMixesEnabled && isMix(mediaItem));
+                            (isHideStreamsEnabled && mediaItem.isLive()) || (isHideMixesEnabled && isMix(mediaItem)) ||
+                            (isHideAiLabeledEnabled && AiLabelCache.isLabeled(mediaItem.getVideoId()));
                 });
             }
         }

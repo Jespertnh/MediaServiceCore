@@ -14,6 +14,12 @@ import com.liskovsoft.youtubeapi.next.v2.mock.MockUtils
 import com.liskovsoft.youtubeapi.next.v2.mock.WatchNextApiMock
 import com.liskovsoft.youtubeapi.next.v2.mock.WatchNextApiMock2
 import com.liskovsoft.youtubeapi.next.v2.mock.WatchNextApiMock3
+import com.liskovsoft.youtubeapi.next.v2.mock.WatchNextApiMockAiLabeled
+import com.liskovsoft.youtubeapi.next.v2.mock.WatchNextApiMockNotAiLabeled
+import com.liskovsoft.youtubeapi.next.v2.gen.isAiLabeled
+import com.liskovsoft.youtubeapi.service.internal.AiLabelCache
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -46,6 +52,35 @@ class WatchNextApiTest {
         mApiMock2 = MockUtils.mockWithGson(WatchNextApiMock2::class.java)
         mApiMock3 = MockUtils.mockWithGson(WatchNextApiMock3::class.java)
         RetrofitOkHttpHelper.disableCompression = true
+    }
+
+    @Test
+    fun testThatMockedAiLabeledVideoIsDetected() {
+        val result = MockUtils.mockWithGson(WatchNextApiMockAiLabeled::class.java).getWatchNextResult("").execute().body()
+
+        assertNotNull("watchNextResult not null", result)
+        assertTrue("Video labeled as AI", result!!.isAiLabeled())
+    }
+
+    @Test
+    fun testThatMockedRegularVideoIsNotAiLabeled() {
+        val result = MockUtils.mockWithGson(WatchNextApiMockNotAiLabeled::class.java).getWatchNextResult("").execute().body()
+
+        assertNotNull("watchNextResult not null", result)
+        assertFalse("Video isn't labeled as AI", result!!.isAiLabeled())
+    }
+
+    @Test
+    fun testThatAiLabelCheckIsCached() {
+        mWatchNextService.setWatchNextApi(MockUtils.mockWithGson(WatchNextApiMockAiLabeled::class.java))
+        assertEquals(true, mWatchNextService.isAiLabeled("aiLabeled01"))
+        assertEquals(true, AiLabelCache.get("aiLabeled01"))
+
+        mWatchNextService.setWatchNextApi(MockUtils.mockWithGson(WatchNextApiMockNotAiLabeled::class.java))
+        assertEquals(false, mWatchNextService.isAiLabeled("notLabeled01"))
+        assertEquals(false, AiLabelCache.get("notLabeled01"))
+        // Served from the cache, the mock would return the regular video
+        assertEquals(true, mWatchNextService.isAiLabeled("aiLabeled01"))
     }
 
     @Test
