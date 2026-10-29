@@ -19,7 +19,7 @@ object AiLabelCache {
     private val entries by lazy { restoreData() }
     private var persistAction: Disposable? = null
 
-    private data class Entry(val isLabeled: Boolean, val checkedAtMs: Long)
+    private data class CacheEntry(val isLabeled: Boolean, val checkedAtMs: Long)
 
     /**
      * @return null if the video wasn't checked yet or the result is outdated
@@ -57,17 +57,17 @@ object AiLabelCache {
                 return
             }
 
-            entries[videoId] = Entry(isLabeled, System.currentTimeMillis())
+            entries[videoId] = CacheEntry(isLabeled, System.currentTimeMillis())
         }
 
         persistData()
     }
 
-    private fun createMap() = object : LinkedHashMap<String, Entry>(16, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Entry>?): Boolean = size > MAX_SIZE
+    private fun createMap() = object : LinkedHashMap<String, CacheEntry>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CacheEntry>?): Boolean = size > MAX_SIZE
     }
 
-    private fun restoreData(): LinkedHashMap<String, Entry> {
+    private fun restoreData(): LinkedHashMap<String, CacheEntry> {
         val result = createMap()
 
         if (Helpers.isJUnitTest()) {
@@ -77,7 +77,7 @@ object AiLabelCache {
         MediaServicePrefs.getData(DATA_KEY)?.split(ITEM_DELIM)?.forEach {
             val fields = it.split(FIELD_DELIM)
             val checkedAtMs = fields.getOrNull(2)?.toLongOrNull() ?: return@forEach
-            result[fields[0]] = Entry(fields[1] == "1", checkedAtMs)
+            result[fields[0]] = CacheEntry(fields[1] == "1", checkedAtMs)
         }
 
         return result
